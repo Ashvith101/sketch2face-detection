@@ -1,4 +1,4 @@
-# Sketch-to-Face Generation using PyTorch GAN
+# Sketch-to-Face Generation using GAN in PyTorch
 
 A PyTorch implementation of a Generative Adversarial Network (GAN) for converting facial sketches to photorealistic faces using the FS2K dataset.
 
