@@ -262,10 +262,23 @@ if __name__ == "__main__":
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, 
                                shuffle=False, num_workers=4)
     
+    start_epoch = 20  # Change this to the epoch number you want to start from
+    generator_checkpoint = 'generator_epoch_20.pth'  # Change to your saved generator file
+    discriminator_checkpoint = 'discriminator_epoch_20.pth'  # Change to your saved discriminator file
+
     # Initialize models
     generator = Generator().to(device)
     discriminator = Discriminator().to(device)
-    
+
+    # Load saved states if they exist
+    if os.path.exists(generator_checkpoint) and os.path.exists(discriminator_checkpoint):
+        print(f"Loading checkpoint from epoch {start_epoch}")
+        generator.load_state_dict(torch.load(generator_checkpoint))
+        discriminator.load_state_dict(torch.load(discriminator_checkpoint))
+    else:
+        print("No checkpoints found, starting from scratch")
+        start_epoch = 0
+
     # Loss functions
     criterion_GAN = nn.MSELoss()
     criterion_pixel = nn.L1Loss()
@@ -290,15 +303,16 @@ if __name__ == "__main__":
     assert disc_output.shape[2] == disc_output.shape[3] == 15, \
         f"Unexpected discriminator output size: {disc_output.shape}"
 
+
     # Training loop
-    for epoch in range(num_epochs):
+    for epoch in range(start_epoch, num_epochs):  # Modified to start from start_epoch
         g_losses = []
         d_losses = []
         
         for batch in tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{num_epochs}"):
             g_loss, d_loss = train_step(generator, discriminator, batch,
-                                      criterion_GAN, criterion_pixel,
-                                      g_optimizer, d_optimizer)
+                                    criterion_GAN, criterion_pixel,
+                                    g_optimizer, d_optimizer)
             g_losses.append(g_loss)
             d_losses.append(d_loss)
         
@@ -311,5 +325,9 @@ if __name__ == "__main__":
             
         # Save models
         if (epoch + 1) % 10 == 0:
-            torch.save(generator.state_dict(), f'generator_epoch_{epoch+1}.pth')
-            torch.save(discriminator.state_dict(), f'discriminator_epoch_{epoch+1}.pth')
+            save_path = 'models'  # Create a dedicated directory for model checkpoints
+            os.makedirs(save_path, exist_ok=True)
+            torch.save(generator.state_dict(), 
+                    os.path.join(save_path, f'generator_epoch_{epoch+1}.pth'))
+            torch.save(discriminator.state_dict(), 
+                    os.path.join(save_path, f'discriminator_epoch_{epoch+1}.pth'))
